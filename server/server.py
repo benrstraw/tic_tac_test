@@ -4,18 +4,22 @@ import json
 import random
 
 
+# Initalize the global games dictionary.
 games = dict()
 
 
 class Game:
+	# Initalize our class members.
 	def __init__(self):
-		self.users = dict()
 		self.board = [ '', '', '', '', '', '', '', '', '' ]
 		self.turn = random.choice(['X', 'O'])
+		self.winner = None
+		self.users = dict()
 		self.playerx = None
 		self.playero = None
 
 
+	# When a new uers is added, the first player is X, the second O, and any other spectators.
 	def add_user(self, websocket):
 		self.users[websocket] = ''
 		print('Users connected to this game: ' + str(len(self.users)))
@@ -36,14 +40,33 @@ class Game:
 			self.playero = None
 
 
+	async def reset_game(self):
+		await asyncio.sleep(4)
+		print("Resetting gamestate...")
+		self.board = [ '', '', '', '', '', '', '', '', '' ]
+		self.turn = random.choice(['X', 'O'])
+		self.winner = None
+		await self.broadcast_gamestate()
+
+
+	async def send_gamestate(self, user):
+		print("Sending gamestate to user...")
+		await user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'board': self.board }))
+
+
+	async def broadcast_gamestate(self):
+		print("Broadcasting gamestate to all users...")
+		await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'board': self.board })) for user in self.users.keys()])
+
+
 	async def handle(self, websocket, message):
-		player = self.users[websocket]
+		player = str(self.users[websocket])
 		if player == '':
 			print("Got an attempted message from a spectator! Dropping...")
 			return
 
 		if not player == self.turn:
-			print("Got message from " + player + " but it wasn't their turn! ('" + player + "' != '" + self.turn + "')")
+			print("Got message from " + player + " but it wasn't their turn! ('" + player + "' != '" + str(self.turn) + "')")
 			return
 
 		index = int(message)
@@ -56,23 +79,22 @@ class Game:
 			else:
 				self.turn = 'X'
 
-			winner = None
 			if self.board[0] != '' and self.board[0] == self.board[1] and self.board[1] == self.board[2]:
-				winner = self.board[0]
+				self.winner = self.board[0]
 			elif self.board[3] != '' and self.board[3] == self.board[4] and self.board[4] == self.board[5]:
-				winner = self.board[4]
+				self.winner = self.board[4]
 			elif self.board[6] != '' and self.board[6] == self.board[7] and self.board[7] == self.board[8]:
-				winner = self.board[6]
+				self.winner = self.board[6]
 			elif self.board[0] != '' and self.board[0] == self.board[3] and self.board[3] == self.board[6]:
-				winner = self.board[0]
+				self.winner = self.board[0]
 			elif self.board[1] != '' and self.board[1] == self.board[4] and self.board[4] == self.board[7]:
-				winner = self.board[1]
+				self.winner = self.board[1]
 			elif self.board[2] != '' and self.board[2] == self.board[5] and self.board[5] == self.board[8]:
-				winner = self.board[2]
+				self.winner = self.board[2]
 			elif self.board[0] != '' and self.board[0] == self.board[4] and self.board[4] == self.board[8]:
-				winner = self.board[0]
+				self.winner = self.board[0]
 			elif self.board[2] != '' and self.board[2] == self.board[4] and self.board[4] == self.board[6]:
-				winner = self.board[2]
+				self.winner = self.board[2]
 
 			tie = True
 			for x in self.board:
@@ -80,16 +102,17 @@ class Game:
 					tie = False
 
 			if tie:
+				self.turn = None
 				print("There was a tie!")
-				await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'winner': 'tie', 'board': self.board })) for user in self.users.keys()])
-			elif winner:
-				print(winner + " is the winner!")
-				await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'winner': winner, 'board': self.board })) for user in self.users.keys()])
-			else:
-				print("No winner, sending game state and awaiting...")
-				await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'board': self.board })) for user in self.users.keys()])
+				asyncio.create_task(self.reset_game())
+			elif self.winner:
+				self.turn = None
+				print(self.winner + " is the winner!")
+				asyncio.create_task(self.reset_game())
+
+			await self.broadcast_gamestate()
 		else:
-			print(player + " attempted to place at position " + str(index) + " but it was already occupied by " + self.board[index] + "!")
+			print(player + " attempted to place at position " + str(index) + " but it was already occupied by " + str(self.board[index]) + "!")
 
 
 async def handler(websocket, path):
@@ -103,7 +126,7 @@ async def handler(websocket, path):
 	game = games[path]
 	game.add_user(websocket)
 
-	await websocket.send(json.dumps({ 'you': game.users[websocket], 'turn': game.turn, 'board': game.board }))
+	await game.send_gamestate(websocket)
 
 	try:
 		print("Listening to " + host + "...")
@@ -113,6 +136,7 @@ async def handler(websocket, path):
 		print("Websocket to " + host + " disconnected, removing user from game " + path + "...")
 		game.remove_user(websocket)
 
-start_server = websockets.serve(handler, "", 4629)
-asyncio.get_event_loop().run_until_complete(start_server)
+print("Serving...")
+gameserver = websockets.serve(handler, "", 4629)
+asyncio.get_event_loop().run_until_complete(gameserver)
 asyncio.get_event_loop().run_forever()
