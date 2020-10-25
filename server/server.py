@@ -36,15 +36,10 @@ class Game:
 			self.playero = None
 
 
-	async def broadcast_update(self):
-		if self.users:
-			await asyncio.wait([user.send(json.dumps({ 'turn': self.turn, 'board': self.board })) for user in self.users])
-
-
 	async def handle(self, websocket, message):
-		if websocket == self.playerx && self.turn == 'x':
+		if websocket == self.playerx and self.turn == 'x':
 			player = 'x'
-		elif websocket == self.playero && self.turn == 'o':
+		elif websocket == self.playero and self.turn == 'o':
 			player = 'o'
 		else:
 			return
@@ -52,11 +47,34 @@ class Game:
 		index = int(message)
 		if self.board[index] == '':
 			self.board[index] = player
+
 			if player == 'x':
 				self.turn = 'o'
 			else:
 				self.turn = 'x'
-			await self.broadcast_update()
+
+			winner = None
+			if self.board[0] != '' and self.board[0] == self.board[1] and self.board[1] == self.board[2]:
+				winner = self.board[0]
+			elif self.board[3] != '' and self.board[3] == self.board[4] and self.board[4] == self.board[5]:
+				winner = self.board[4]
+			elif self.board[6] != '' and self.board[6] == self.board[7] and self.board[7] == self.board[8]:
+				winner = self.board[6]
+			elif self.board[0] != '' and self.board[0] == self.board[3] and self.board[3] == self.board[6]:
+				winner = self.board[0]
+			elif self.board[1] != '' and self.board[1] == self.board[4] and self.board[4] == self.board[7]:
+				winner = self.board[1]
+			elif self.board[2] != '' and self.board[2] == self.board[5] and self.board[5] == self.board[8]:
+				winner = self.board[2]
+			elif self.board[0] != '' and self.board[0] == self.board[4] and self.board[4] == self.board[8]:
+				winner = self.board[0]
+			elif self.board[2] != '' and self.board[2] == self.board[4] and self.board[4] == self.board[6]:
+				winner = self.board[2]
+
+			if winner:
+				await asyncio.wait([user.send(json.dumps({ 'winner': winner, 'board': self.board })) for user in self.users])
+			else:
+				await asyncio.wait([user.send(json.dumps({ 'turn': self.turn, 'board': self.board })) for user in self.users])
 
 
 async def handler(websocket, path):
@@ -70,6 +88,8 @@ async def handler(websocket, path):
 	game = games[path]
 	if not game.add_user(websocket):
 		return
+
+	await websocket.send(json.dumps({ 'turn': game.turn, 'board': game.board }))
 
 	try:
 		print("Listening to " + host + "...")
