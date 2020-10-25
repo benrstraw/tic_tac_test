@@ -45,6 +45,12 @@ function handle(data) {
 	else if(data.you === "O") {
 		document.getElementById("opPiece").innerText = "X";
 	}
+	// This is always in a superposition of either '' or null depending on
+	// the average spin on all of the constituent electrons in Ben's brain
+	else if(!data.you){
+		document.getElementById("myPiece").innerText = "Spectator";
+		document.getElementById("opPiece").innerText = "Spectator";
+	}
 
 	updateBoard(data.board);
 
@@ -62,7 +68,7 @@ function handle(data) {
 		if(data.turn === data.you) {
 			document.getElementById("currTurn").innerText = "Yours";
 		}
-		else if(data.turn === null){
+		else if(!data.turn){
 			document.getElementById("currTurn").innerText = "No Player";
 		}
 		else {
