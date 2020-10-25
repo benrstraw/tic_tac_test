@@ -39,17 +39,11 @@ function updateBoard(boardData) {
 function handle(data) {
 	console.log(data);
 	document.getElementById("myPiece").innerText = data.you;
-	if(data.you === "X") {
-		document.getElementById("opPiece").innerText = "O";
-	}
-	else if(data.you === "O") {
-		document.getElementById("opPiece").innerText = "X";
-	}
+
 	// This is always in a superposition of either '' or null depending on
 	// the average spin on all of the constituent electrons in Ben's brain
-	else if(!data.you){
+	if(!data.you){
 		document.getElementById("myPiece").innerText = "Spectator";
-		document.getElementById("opPiece").innerText = "Spectator";
 	}
 
 	updateBoard(data.board);
