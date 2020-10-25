@@ -7,26 +7,33 @@ ws.onerror = function(error) {
 };
 
 ws.onclose = function() {
-	console.log("Opened!");
+	console.log("Closed!");
 };
 
 ws.onopen = function() {
-	console.log("Closed!");
+	console.log("Opened!");
 };
 
 ws.onmessage = function(event) {
 	data = JSON.parse(event.data);
-	handle(data);
+
+	if(data.winner) {
+		console.log(data.winner + " is the winner!");
+	} else {
+		var board = data.board;
+		console.log(board[0] + '|' + board[1] + '|' + board[2]);
+		console.log('-----');
+		console.log(board[3] + '|' + board[4] + '|' + board[5]);
+		console.log('-----');
+		console.log(board[6] + '|' + board[7] + '|' + board[8]);
+		console.log(data.turn + "'s turn!");
+	}
 };
 
 function send(cmd) {
 	var out = JSON.stringify(cmd);
 	console.log(out);
 	ws.send(out);
-}
-
-function handle(data) {
-	console.log(data);
 }
 
 function test(str) {
