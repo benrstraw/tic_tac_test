@@ -1,6 +1,6 @@
-var url = new URL(window.location.href);
-var game = url.searchParams.get("g");
-var ws = new WebSocket("ws://tac.benrstraw.xyz/" + game)
+const url = new URL(window.location.href);
+const game = url.searchParams.get("g");
+const ws = new WebSocket("ws://tac.benrstraw.xyz/" + game);
 
 ws.onerror = function(error) {
 	console.error(error);
@@ -15,25 +15,63 @@ ws.onopen = function() {
 };
 
 ws.onmessage = function(event) {
-	data = JSON.parse(event.data);
-
-	if(data.winner) {
-		console.log(data.winner + " is the winner!");
-	} else {
-		var board = data.board;
-		console.log(board[0] + '|' + board[1] + '|' + board[2]);
-		console.log('-----');
-		console.log(board[3] + '|' + board[4] + '|' + board[5]);
-		console.log('-----');
-		console.log(board[6] + '|' + board[7] + '|' + board[8]);
-		console.log(data.turn + "'s turn!");
-	}
+	let data = JSON.parse(event.data);
+	handle(data);
 };
 
+function makeMove(id) {
+	const index = id.slice(-1);
+	send(parseInt(index));
+}
+
 function send(cmd) {
-	var out = JSON.stringify(cmd);
+	const out = JSON.stringify(cmd);
 	console.log(out);
 	ws.send(out);
+}
+
+function updateBoard(boardData) {
+	for(let i=0; i<boardData.length; i++) {
+		document.getElementById("in" + i).innerHTML = boardData[i];
+	}
+}
+
+function handle(data) {
+	console.log(data);
+	document.getElementById("myPiece").innerText = data.you;
+	if(data.you === "X") {
+		document.getElementById("opPiece").innerText = "O";
+	}
+	else if(data.you === "O") {
+		document.getElementById("opPiece").innerText = "X";
+	}
+
+	updateBoard(data.board);
+
+	if(data.winner === "tie") {
+		//FUCKING AIDS. FUCK YOU JS
+		setTimeout(function() { alert('Tie Game!'); }, 1);
+		document.getElementById("winner").innerText = "Tie Game";
+	}
+	else if(data.winner) {
+		//FUCKING AIDS. FUCK YOU JS
+		setTimeout(function() { alert(data.winner + " Won!"); }, 1);
+		document.getElementById("winner").innerText = data.winner;
+	}
+	else {
+		if(data.turn === data.you) {
+			document.getElementById("currTurn").innerText = "Yours";
+		}
+		else if(data.turn === null){
+			document.getElementById("currTurn").innerText = "No Player";
+		}
+		else {
+			document.getElementById("currTurn").innerText = data.turn + "'s turn";
+		}
+
+		document.getElementById("winner").innerText = "No Winner";
+	}
+
 }
 
 function test(str) {
