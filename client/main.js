@@ -36,6 +36,7 @@ function updateBoard(boardData) {
 	}
 }
 
+
 function handle(data) {
 	console.log(data);
 	document.getElementById("myPiece").innerText = data.you;
