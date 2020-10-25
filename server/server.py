@@ -23,7 +23,7 @@ class Game:
 
 	# When a new uers is added, the first player is X, the second O, and any other spectators.
 	def add_user(self, websocket):
-		self.users[websocket] = ''
+		self.users[websocket] = None
 		print('Users connected to this game: ' + str(len(self.users)))
 		if not self.playerx:
 			self.playerx = websocket
