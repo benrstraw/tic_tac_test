@@ -2,10 +2,12 @@ import asyncio
 import websockets
 import json
 import random
-
+import queue
 
 # Initalize the global games dictionary.
 games = dict()
+
+open_queue = queue.Queue()
 
 
 class Game:
@@ -119,11 +121,20 @@ async def handler(websocket, path):
 	host = str(websocket.remote_address[0]) + ":" + str(websocket.remote_address[1])
 	print("Got connection from " + host + " on path " + str(path))
 
-	if path not in games:
-		print("Game doesn't already exist on path " + str(path) + " , creating...")
-		games[path] = Game()
+	game = None
+	if path:
+		if path not in games:
+			print("Game doesn't already exist on path " + str(path) + " , creating...")
+			games[path] = Game()
 
-	game = games[path]
+		game = games[path]
+	else:
+		if not open_queue.empty():
+			game = open_queue.get()
+		else:
+			game = Game()
+			open_queue.put(game)
+
 	game.add_user(websocket)
 
 	await game.send_gamestate(websocket)
