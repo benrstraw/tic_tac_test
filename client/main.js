@@ -1,4 +1,4 @@
-var ws = new WebSocket("ws://wdc.benrstraw.xyz:4629")
+var ws = new WebSocket("ws://tac.benrstraw.xyz")
 
 ws.onerror = function(error) {
 	console.error(error);
