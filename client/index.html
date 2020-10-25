@@ -9,6 +9,41 @@
 	<script src="main.js" type="text/javascript"></script>
 </head>
 <body>
-	
+
+<table id="customers">
+	<tr>
+		<th>Name</th>
+		<th>Value</th>
+	</tr>
+	<tr>
+		<td><div class="meta-format">Current Players Turn:</div></td>
+		<td><div class="meta-format" id="currTurn"></div></td>
+	</tr>
+	<tr>
+		<td><div class="meta-format">Opponent Piece:</div></td>
+		<td><div class="meta-format" id="opPiece"></div></td>
+	</tr>
+	<tr>
+		<td><div class="meta-format">My Piece</div></td>
+		<td><div class="meta-format" id="myPiece"></div></td>
+	</tr>
+	<tr>
+		<td><div class="meta-format">Winner:</div></td>
+		<td><div class="meta-format" id="winner"></div></td>
+	</tr>
+</table>
+
+<div class="grid-container">
+	<div class="grid-item" id="slot0" onclick="makeMove(id)"> <div class="grid-answer" id="in0"></div></div>
+	<div class="grid-item" id="slot1" onclick="makeMove(id)"> <div class="grid-answer" id="in1"></div></div>
+	<div class="grid-item" id="slot2" onclick="makeMove(id)"> <div class="grid-answer" id="in2"></div></div>
+	<div class="grid-item" id="slot3" onclick="makeMove(id)"> <div class="grid-answer" id="in3"></div></div>
+	<div class="grid-item" id="slot4" onclick="makeMove(id)"> <div class="grid-answer" id="in4"></div></div>
+	<div class="grid-item" id="slot5" onclick="makeMove(id)"> <div class="grid-answer" id="in5"></div></div>
+	<div class="grid-item" id="slot6" onclick="makeMove(id)"> <div class="grid-answer" id="in6"></div></div>
+	<div class="grid-item" id="slot7" onclick="makeMove(id)"> <div class="grid-answer" id="in7"></div></div>
+	<div class="grid-item" id="slot8" onclick="makeMove(id)"> <div class="grid-answer" id="in8"></div></div>
+</div>
+
 </body>
 </html>
