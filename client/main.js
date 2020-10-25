@@ -1,4 +1,6 @@
-var ws = new WebSocket("ws://tac.benrstraw.xyz")
+var url = new URL(window.location.href);
+var game = url.searchParams.get("g");
+var ws = new WebSocket("ws://tac.benrstraw.xyz/" + game)
 
 ws.onerror = function(error) {
 	console.error(error);
