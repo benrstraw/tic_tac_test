@@ -9,27 +9,27 @@ games = dict()
 
 class Game:
 	def __init__(self):
-		self.users = set()
+		self.users = dict()
 		self.board = [ '', '', '', '', '', '', '', '', '' ]
-		self.turn = random.choice(['x', 'o'])
+		self.turn = random.choice(['X', 'O'])
 		self.playerx = None
 		self.playero = None
 
+
 	def add_user(self, websocket):
-		self.users.add(websocket)
-		if self.playerx and self.playero:
-			return False
-		elif self.playerx:
-			self.playero = websocket
-			return True
-		else:
+		self.users[websocket] = ''
+		print('Users connected to this game: ' + str(len(self.users)))
+		if not self.playerx:
 			self.playerx = websocket
-			return True
+			self.users[websocket] = 'X'
+		elif not self.playero:
+			self.playero = websocket
+			self.users[websocket] = 'O'
 
 
 	def remove_user(self, websocket):
-		self.users.remove(websocket)
-		print('Users connected to this match: ' + str(len(self.users)))
+		self.users.pop(websocket)
+		print('Users connected to this game: ' + str(len(self.users)))
 		if websocket == self.playerx:
 			self.playerx = None
 		elif websocket == self.playero:
@@ -37,21 +37,24 @@ class Game:
 
 
 	async def handle(self, websocket, message):
-		if websocket == self.playerx and self.turn == 'x':
-			player = 'x'
-		elif websocket == self.playero and self.turn == 'o':
-			player = 'o'
-		else:
+		player = self.users[websocket]
+		if player == '':
+			print("Got an attempted message from a spectator! Dropping...")
+			return
+
+		if not player == self.turn:
+			print("Got message from " + player + " but it wasn't their turn! ('" + player + "' != '" + self.turn + "')")
 			return
 
 		index = int(message)
+		print("Attempting to place " + player + "'s piece at position " + str(index) + "...")
 		if self.board[index] == '':
 			self.board[index] = player
 
-			if player == 'x':
-				self.turn = 'o'
+			if self.turn == 'X':
+				self.turn = 'O'
 			else:
-				self.turn = 'x'
+				self.turn = 'X'
 
 			winner = None
 			if self.board[0] != '' and self.board[0] == self.board[1] and self.board[1] == self.board[2]:
@@ -71,10 +74,22 @@ class Game:
 			elif self.board[2] != '' and self.board[2] == self.board[4] and self.board[4] == self.board[6]:
 				winner = self.board[2]
 
-			if winner:
-				await asyncio.wait([user.send(json.dumps({ 'winner': winner, 'board': self.board })) for user in self.users])
+			tie = True
+			for x in self.board:
+				if x == '':
+					tie = False
+
+			if tie:
+				print("There was a tie!")
+				await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'winner': 'tie', 'board': self.board })) for user in self.users.keys()])
+			elif winner:
+				print(winner + " is the winner!")
+				await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'winner': winner, 'board': self.board })) for user in self.users.keys()])
 			else:
-				await asyncio.wait([user.send(json.dumps({ 'turn': self.turn, 'board': self.board })) for user in self.users])
+				print("No winner, sending game state and awaiting...")
+				await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'board': self.board })) for user in self.users.keys()])
+		else:
+			print(player + " attempted to place at position " + str(index) + " but it was already occupied by " + self.board[index] + "!")
 
 
 async def handler(websocket, path):
@@ -86,15 +101,13 @@ async def handler(websocket, path):
 		games[path] = Game()
 
 	game = games[path]
-	if not game.add_user(websocket):
-		return
+	game.add_user(websocket)
 
-	await websocket.send(json.dumps({ 'turn': game.turn, 'board': game.board }))
+	await websocket.send(json.dumps({ 'you': game.users[websocket], 'turn': game.turn, 'board': game.board }))
 
 	try:
 		print("Listening to " + host + "...")
 		async for message in websocket:
-			print("Message from " + host + ": " + message)
 			await game.handle(websocket, message)
 	finally:
 		print("Websocket to " + host + " disconnected, removing user from game " + path + "...")
