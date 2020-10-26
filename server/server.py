@@ -10,41 +10,58 @@ games = dict()
 open_queue = queue.Queue()
 
 
+def fmt_host(websocket):
+	# return str(websocket.remote_address[0]) + ":" + str(websocket.remote_address[1])
+	return str(websocket.remote_address[1])
+
+
 class Game:
 	# Initalize our class members.
-	def __init__(self):
+	def __init__(self, priv):
+		self.private = priv
 		self.board = [ '', '', '', '', '', '', '', '', '' ]
 		self.turn = random.choice(['X', 'O'])
 		self.winner = None
 		self.users = dict()
 		self.playerx = None
 		self.playero = None
+		self.id = hex(id(self)).lstrip("0x")
 
 
 	# When a new uers is added, the first player is X, the second O, and any other spectators.
 	def add_user(self, websocket):
 		self.users[websocket] = None
-		print('Users connected to this game: ' + str(len(self.users)))
+		print("G#" + self.id + ": Users connected to this game: " + str(len(self.users)))
 		if not self.playerx:
 			self.playerx = websocket
 			self.users[websocket] = 'X'
+			print("G#" + self.id + ": Assigning user " + fmt_host(websocket) + " to X")
 		elif not self.playero:
 			self.playero = websocket
 			self.users[websocket] = 'O'
+			print("G#" + self.id + ": Assigning user " + fmt_host(websocket) + " to O")
 
 
 	def remove_user(self, websocket):
 		self.users.pop(websocket)
-		print('Users connected to this game: ' + str(len(self.users)))
+		print("G#" + self.id + ": Users connected to this game: " + str(len(self.users)))
 		if websocket == self.playerx:
 			self.playerx = None
+			print("G#" + self.id + ": Lost player X")
 		elif websocket == self.playero:
 			self.playero = None
+			print("G#" + self.id + ": Lost player O")
+		if not self.playerx or not self.playero:
+			if self.private:
+				print("G#" + self.id + ": Game is missing a player, but private; not marking as open!")
+			else:
+				open_queue.put(self)
+				print("G#" + self.id + ": Adding game to open game queue!")
 
 
 	async def reset_game(self):
 		await asyncio.sleep(4)
-		print("Resetting gamestate...")
+		print("G#" + self.id + ": Resetting gamestate!")
 		self.board = [ '', '', '', '', '', '', '', '', '' ]
 		self.turn = random.choice(['X', 'O'])
 		self.winner = None
@@ -52,27 +69,27 @@ class Game:
 
 
 	async def send_gamestate(self, user):
-		print("Sending gamestate to user...")
+		print("G#" + self.id + ": Sending gamestate to user " + fmt_host(user))
 		await user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'board': self.board }))
 
 
 	async def broadcast_gamestate(self):
-		print("Broadcasting gamestate to all users...")
+		print("G#" + self.id + ": Broadcasting gamestate to all users...")
 		await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'board': self.board })) for user in self.users.keys()])
 
 
 	async def handle(self, websocket, message):
 		player = str(self.users[websocket])
 		if player == '':
-			print("Got an attempted message from a spectator! Dropping...")
+			print("G#" + self.id + ": Got an attempted message from a spectator! (" + fmt_host(websocket) + ") Dropping...")
 			return
 
 		if not player == self.turn:
-			print("Got message from " + player + " but it wasn't their turn! ('" + player + "' != '" + str(self.turn) + "')")
+			print("G#" + self.id + ": Got message from " + player + " but it wasn't their turn! ('" + player + "' != '" + str(self.turn) + "')")
 			return
 
 		index = int(message)
-		print("Attempting to place " + player + "'s piece at position " + str(index) + "...")
+		print("G#" + self.id + ": Attempting to place " + player + "'s piece at position " + str(index) + "...")
 		if self.board[index] == '':
 			self.board[index] = player
 
@@ -105,46 +122,47 @@ class Game:
 
 			if tie:
 				self.turn = None
-				print("There was a tie!")
+				print("G#" + self.id + ": There was a tie!")
 				asyncio.create_task(self.reset_game())
 			elif self.winner:
 				self.turn = None
-				print(self.winner + " is the winner!")
+				print("G#" + self.id + ": " + self.winner + " is the winner!")
 				asyncio.create_task(self.reset_game())
 
 			await self.broadcast_gamestate()
 		else:
-			print(player + " attempted to place at position " + str(index) + " but it was already occupied by " + str(self.board[index]) + "!")
+			print("G#" + self.id + ": " + player + " attempted to place at position " + str(index) + " but it was already occupied by " + str(self.board[index]))
 
 
 async def handler(websocket, path):
-	host = str(websocket.remote_address[0]) + ":" + str(websocket.remote_address[1])
-	print("Got connection from " + host + " on path " + str(path))
+	host = fmt_host(websocket)
+	print("COORDINATOR: Got connection from " + host + " on path " + str(path))
 
 	game = None
-	if path:
+	if path and path != "/":
 		if path not in games:
-			print("Game doesn't already exist on path " + str(path) + " , creating...")
-			games[path] = Game()
+			games[path] = Game(priv=True)
+			print("COORDINATOR: Created new game G#" + game.id + " on path " + str(path))
 
 		game = games[path]
 	else:
 		if not open_queue.empty():
 			game = open_queue.get()
+			print("COORDINATOR: Assigned user " + host + " to game G#" + game.id)
 		else:
-			game = Game()
+			game = Game(priv=False)
 			open_queue.put(game)
+			print("COORDINATOR: Created new open game G#" + game.id + " for user " + host)
 
 	game.add_user(websocket)
 
 	await game.send_gamestate(websocket)
 
 	try:
-		print("Listening to " + host + "...")
 		async for message in websocket:
 			await game.handle(websocket, message)
 	finally:
-		print("Websocket to " + host + " disconnected, removing user from game " + path + "...")
+		print("COORDINATOR: User " + host + " disconnected, removing from game #" + game.id)
 		game.remove_user(websocket)
 
 print("Serving...")
