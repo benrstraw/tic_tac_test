@@ -17,8 +17,9 @@ def fmt_host(websocket):
 
 class Game:
 	# Initalize our class members.
-	def __init__(self, priv):
+	def __init__(self, priv, path=None):
 		self.private = priv
+		self.path = path
 		self.board = [ '', '', '', '', '', '', '', '', '' ]
 		self.turn = random.choice(['X', 'O'])
 		self.winner = None
@@ -29,12 +30,17 @@ class Game:
 		self.id = hex(id(self)).lstrip("0x")
 
 
+	def __del__(self):
+		print("G#" + self.id + ": Game deleted! Good bye!")
+
+
 	def remove(self):
 		print("G#" + self.id + ": Removing self from coordinator!")
 		for user in self.users.keys():
 			close()
 		self.users.clear()
-		games.pop(self)
+		if self.path:
+			del games[self.path]
 		return
 
 
@@ -162,7 +168,7 @@ async def handler(websocket, path):
 	game = None
 	if path and path != "/":
 		if path not in games:
-			games[path] = Game(priv=True)
+			games[path] = Game(priv=True, path=path)
 			print("COORDINATOR: Created new game G#" + games[path].id + " on path " + str(path))
 
 		game = games[path]
