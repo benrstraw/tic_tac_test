@@ -141,6 +141,7 @@ class Game:
 					tie = False
 
 			if tie:
+				self.winner = "tie"
 				self.turn = None
 				print("G#" + self.id + ": There was a tie!")
 				asyncio.create_task(self.reset_game())
