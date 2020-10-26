@@ -58,6 +58,27 @@ function handle(data) {
 	document.getElementById("specCount").innerText = data.specs;
 	document.getElementById("myPiece").innerText = data.you;
 
+	if (data.you === 'X')
+	{
+		if(data.playero) {
+			document.getElementById("opConn").innerText = "True";
+		}
+		else {
+			document.getElementById("opConn").innerText = "False";
+		}
+	}
+	else if(data.you === 'O'){
+		if(data.playerx) {
+			document.getElementById("opConn").innerText = "True";
+		}
+		else {
+			document.getElementById("opConn").innerText = "False";
+		}
+	}
+	else if(!data.you) {
+		document.getElementById("opConnTr").hidden = true;
+	}
+
 	// This is always in a superposition of either '' or null depending on
 	// the average spin on all of the constituent electrons in Ben's brain
 	if(!data.you){
