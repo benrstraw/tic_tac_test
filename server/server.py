@@ -34,10 +34,10 @@ class Game:
 		print("G#" + self.id + ": Game deleted! Good bye!")
 
 
-	def remove(self):
+	async def remove(self):
 		print("G#" + self.id + ": Removing self from coordinator!")
 		for user in self.users.keys():
-			user.close()
+			await user.close()
 		self.users.clear()
 		if self.path:
 			del games[self.path]
@@ -45,7 +45,7 @@ class Game:
 
 
 	# When a new uers is added, the first player is X, the second O, and any other spectators.
-	def add_user(self, websocket):
+	async def add_user(self, websocket):
 		self.users[websocket] = None
 		print("G#" + self.id + ": Users connected to this game: " + str(len(self.users)))
 		if not self.playerx:
@@ -60,8 +60,8 @@ class Game:
 			self.specs.add(websocket)
 
 
-	def remove_user(self, websocket):
-		self.users.pop(websocket)
+	async def remove_user(self, websocket):
+		del users[websocket]
 		print("G#" + self.id + ": Users connected to this game: " + str(len(self.users)))
 		if websocket == self.playerx:
 			self.playerx = None
@@ -71,6 +71,8 @@ class Game:
 			print("G#" + self.id + ": Lost player O")
 		else:
 			self.specs.remove(websocket)
+
+		await game.broadcast_gamestate()
 
 		if not self.playerx and not self.playero:
 			self.remove()
@@ -186,7 +188,7 @@ async def handler(websocket, path):
 
 	print("COORDINATOR: Currently tracking " + str(len(games)) + " games.")
 
-	game.add_user(websocket)
+	await game.add_user(websocket)
 
 	await game.broadcast_gamestate()
 
@@ -197,8 +199,7 @@ async def handler(websocket, path):
 		pass
 	finally:
 		print("COORDINATOR: User " + host + " disconnected, removing from game #" + game.id + " on path " + str(path))
-		game.remove_user(websocket)
-		await game.broadcast_gamestate()
+		await game.remove_user(websocket)
 
 print("Serving...")
 gameserver = websockets.serve(handler, "", 4629)
