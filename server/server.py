@@ -75,7 +75,7 @@ class Game:
 		await self.broadcast_gamestate()
 
 		if not self.playerx and not self.playero:
-			self.remove()
+			await self.remove()
 		elif not self.playerx or not self.playero:
 			if self.private:
 				print("G#" + self.id + ": Game is missing a player, but private; not marking as open!")
