@@ -162,7 +162,7 @@ async def handler(websocket, path):
 		async for message in websocket:
 			await game.handle(websocket, message)
 	finally:
-		print("COORDINATOR: User " + host + " disconnected, removing from game #" + game.id)
+		print("COORDINATOR: User " + host + " disconnected, removing from game #" + game.id + " on path " + str(path))
 		game.remove_user(websocket)
 
 print("Serving...")
