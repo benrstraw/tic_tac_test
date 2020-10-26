@@ -142,7 +142,7 @@ async def handler(websocket, path):
 	if path and path != "/":
 		if path not in games:
 			games[path] = Game(priv=True)
-			print("COORDINATOR: Created new game G#" + game.id + " on path " + str(path))
+			print("COORDINATOR: Created new game G#" + games[path].id + " on path " + str(path))
 
 		game = games[path]
 	else:
