@@ -72,7 +72,7 @@ class Game:
 		else:
 			self.specs.remove(websocket)
 
-		await game.broadcast_gamestate()
+		await self.broadcast_gamestate()
 
 		if not self.playerx and not self.playero:
 			self.remove()
