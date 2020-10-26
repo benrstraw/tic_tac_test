@@ -61,7 +61,7 @@ class Game:
 
 
 	async def remove_user(self, websocket):
-		del users[websocket]
+		del self.users[websocket]
 		print("G#" + self.id + ": Users connected to this game: " + str(len(self.users)))
 		if websocket == self.playerx:
 			self.playerx = None
