@@ -50,12 +50,12 @@ function handle(data) {
 
 	if(data.winner === "tie") {
 		//FUCKING AIDS. FUCK YOU JS
-		setTimeout(function() { alert('Tie Game!'); }, 1);
+		setTimeout(function() { alert('Tie Game!'); }, 50);
 		document.getElementById("winner").innerText = "Tie Game";
 	}
 	else if(data.winner) {
 		//FUCKING AIDS. FUCK YOU JS
-		setTimeout(function() { alert(data.winner + " Won!"); }, 1);
+		setTimeout(function() { alert(data.winner + " Won!"); }, 50);
 		document.getElementById("winner").innerText = data.winner;
 	}
 	else {
