@@ -1,6 +1,6 @@
 const url = new URL(window.location.href);
 const game = url.searchParams.get("g");
-const ws = new WebSocket("ws://tac.benrstraw.xyz/" + game);
+const ws = new WebSocket("ws://tac.benrstraw.xyz/" + (game ? game : ""));
 
 ws.onerror = function(error) {
 	console.error(error);
