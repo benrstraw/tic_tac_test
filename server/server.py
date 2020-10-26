@@ -25,14 +25,15 @@ class Game:
 		self.users = dict()
 		self.playerx = None
 		self.playero = None
+		self.specs = set()
 		self.id = hex(id(self)).lstrip("0x")
 
 
 	def remove(self):
 		print("G#" + self.id + ": Removing self from coordinator!")
-		for user in users.keys():
+		for user in self.users.keys():
 			close()
-		users.clear()
+		self.users.clear()
 		games.pop(self)
 		return
 
@@ -49,6 +50,8 @@ class Game:
 			self.playero = websocket
 			self.users[websocket] = 'O'
 			print("G#" + self.id + ": Assigning user " + fmt_host(websocket) + " to O")
+		else:
+			self.specs.add(websocket)
 
 
 	def remove_user(self, websocket):
@@ -60,8 +63,11 @@ class Game:
 		elif websocket == self.playero:
 			self.playero = None
 			print("G#" + self.id + ": Lost player O")
+		else:
+			self.specs.remove(websocket)
+
 		if not self.playerx and not self.playero:
-			remove(self)
+			self.remove()
 		elif not self.playerx or not self.playero:
 			if self.private:
 				print("G#" + self.id + ": Game is missing a player, but private; not marking as open!")
@@ -79,14 +85,17 @@ class Game:
 		await self.broadcast_gamestate()
 
 
+	def get_gamestate(self, user):
+		return { 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'playerx': bool(self.playerx), 'playero': bool(self.playero), 'specs': len(self.specs), 'board': self.board }
+
 	async def send_gamestate(self, user):
 		print("G#" + self.id + ": Sending gamestate to user " + fmt_host(user))
-		await user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'board': self.board }))
+		await user.send(json.dumps(self.get_gamestate(user)))
 
 
 	async def broadcast_gamestate(self):
 		print("G#" + self.id + ": Broadcasting gamestate to all users...")
-		await asyncio.wait([user.send(json.dumps({ 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'board': self.board })) for user in self.users.keys()])
+		await asyncio.wait([user.send(json.dumps(self.get_gamestate(user))) for user in self.users.keys()])
 
 
 	async def handle(self, websocket, message):
@@ -169,7 +178,7 @@ async def handler(websocket, path):
 
 	game.add_user(websocket)
 
-	await game.send_gamestate(websocket)
+	await game.broadcast_gamestate()
 
 	try:
 		async for message in websocket:
