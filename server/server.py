@@ -37,7 +37,7 @@ class Game:
 	def remove(self):
 		print("G#" + self.id + ": Removing self from coordinator!")
 		for user in self.users.keys():
-			close()
+			user.close()
 		self.users.clear()
 		if self.path:
 			del games[self.path]
