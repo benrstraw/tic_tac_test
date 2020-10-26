@@ -94,14 +94,16 @@ class Game:
 	def get_gamestate(self, user):
 		return { 'you': self.users[user], 'turn': self.turn, 'winner': self.winner, 'playerx': bool(self.playerx), 'playero': bool(self.playero), 'specs': len(self.specs), 'board': self.board }
 
+
 	async def send_gamestate(self, user):
 		print("G#" + self.id + ": Sending gamestate to user " + fmt_host(user))
 		await user.send(json.dumps(self.get_gamestate(user)))
 
 
 	async def broadcast_gamestate(self):
-		print("G#" + self.id + ": Broadcasting gamestate to all users...")
-		await asyncio.wait([user.send(json.dumps(self.get_gamestate(user))) for user in self.users.keys()])
+		if self.users.keys():
+			print("G#" + self.id + ": Broadcasting gamestate to all users...")
+			await asyncio.wait([user.send(json.dumps(self.get_gamestate(user))) for user in self.users.keys()])
 
 
 	async def handle(self, websocket, message):
@@ -145,6 +147,7 @@ class Game:
 			for x in self.board:
 				if x == '':
 					tie = False
+					break
 
 			if tie:
 				self.winner = "tie"
@@ -195,6 +198,7 @@ async def handler(websocket, path):
 	finally:
 		print("COORDINATOR: User " + host + " disconnected, removing from game #" + game.id + " on path " + str(path))
 		game.remove_user(websocket)
+		game.broadcast_gamestate()
 
 print("Serving...")
 gameserver = websockets.serve(handler, "", 4629)
