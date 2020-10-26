@@ -32,9 +32,24 @@ function send(cmd) {
 	ws.send(out);
 }
 
-function updateBoard(boardData) {
-	for(let i=0; i<boardData.length; i++) {
-		document.getElementById("in" + i).innerHTML = boardData[i];
+
+function updateBoard(data) {
+	for(let i=0; i<data.board.length; i++) {
+
+		const elem = document.getElementById("in" + i);
+
+		if(data.board[i] === 'X') {
+			elem.classList.add("p1")
+		}
+		else if(data.board[i] === 'O'){
+			elem.classList.add("p2")
+		}
+		else {
+			elem.classList.remove("p1");
+			elem.classList.remove("p2");
+		}
+
+		elem.innerHTML = data.board[i];
 	}
 }
 
@@ -49,7 +64,7 @@ function handle(data) {
 		document.getElementById("myPiece").innerText = "Spectator";
 	}
 
-	updateBoard(data.board);
+	updateBoard(data);
 
 	if(data.winner === "tie") {
 		//FUCKING AIDS. FUCK YOU JS

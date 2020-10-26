@@ -23,7 +23,6 @@ body {
 }
 
 .grid-answer {
-    color: #07adf8;
     font-size: var(--bs);
     height: 100%;
     width: 100%;
@@ -31,6 +30,16 @@ body {
     line-height: var(--bs);
     font-family: "Comic Sans MS", serif;
 }
+
+.p1 {
+    color: #07adf8;
+}
+
+.p2 {
+    color: #f52342;
+}
+
+
 
 .meta-format {
     color: black;
