@@ -8,10 +8,12 @@ ws.onerror = function(error) {
 
 ws.onclose = function() {
 	console.log("Closed!");
+	document.getElementById('connection').innerText = "Disconnected";
 };
 
 ws.onopen = function() {
 	console.log("Opened!");
+	document.getElementById('connection').innerText = "Connected";
 };
 
 ws.onmessage = function(event) {
@@ -38,6 +40,7 @@ function updateBoard(boardData) {
 
 function handle(data) {
 	console.log(data);
+	document.getElementById("specCount").innerText = data.specs;
 	document.getElementById("myPiece").innerText = data.you;
 
 	// This is always in a superposition of either '' or null depending on
