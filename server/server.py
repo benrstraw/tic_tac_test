@@ -28,6 +28,15 @@ class Game:
 		self.id = hex(id(self)).lstrip("0x")
 
 
+	def remove(self):
+		print("G#" + self.id + ": Removing self from coordinator!")
+		for user in users.keys():
+			close()
+		users.clear()
+		games.pop(self)
+		return
+
+
 	# When a new uers is added, the first player is X, the second O, and any other spectators.
 	def add_user(self, websocket):
 		self.users[websocket] = None
@@ -51,7 +60,9 @@ class Game:
 		elif websocket == self.playero:
 			self.playero = None
 			print("G#" + self.id + ": Lost player O")
-		if not self.playerx or not self.playero:
+		if not self.playerx and not self.playero:
+			remove(self)
+		elif not self.playerx or not self.playero:
 			if self.private:
 				print("G#" + self.id + ": Game is missing a player, but private; not marking as open!")
 			else:
@@ -153,6 +164,8 @@ async def handler(websocket, path):
 			game = Game(priv=False)
 			open_queue.put(game)
 			print("COORDINATOR: Created new open game G#" + game.id + " for user " + host)
+
+	print("COORDINATOR: Currently tracking " + str(len(games)) + " games.")
 
 	game.add_user(websocket)
 
