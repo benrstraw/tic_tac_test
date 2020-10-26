@@ -63,11 +63,11 @@ function handle(data) {
 
 	if (data.you === 'X')
 	{
-		data.playero === true ? opConn.innerText = "True" : opConn.innerText = "False";
+		data.playero ? opConn.innerText = "True" : opConn.innerText = "False";
 	}
 	else if(data.you === 'O'){
 
-		data.playerx === true ? opConn.innerText = "True" : opConn.innerText = "True";
+		data.playerx ? opConn.innerText = "True" : opConn.innerText = "False";
 	}
 	else if(!data.you) {
 		document.getElementById("opConnTr").hidden = true;
